@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/", "destination": "/public/index.html" },
+    { "source": "/gifanimado.gif", "destination": "/public/gifanimado.gif" }
+  ]
+}

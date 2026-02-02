@@ -324,7 +324,7 @@
         }
 
         function enviarResultadoPorEmail(valor) {
-            fetch('http://localhost:3000/enviar-resultado', {
+            fetch('/api/enviar-resultado', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
