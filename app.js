@@ -17,7 +17,10 @@ app.use((req, res, next) => {
   }
 });
 
-// Servir arquivos estáticos
+// Servir pasta public
+app.use('/public', express.static(path.join(__dirname, 'public')));
+
+// Servir arquivos estáticos da raiz
 app.use(express.static(path.join(__dirname, '.')));
 
 // API Routes
