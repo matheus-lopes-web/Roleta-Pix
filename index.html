@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roleta do PIX</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .container {
+            text-align: center;
+        }
+
+        h1 {
+            color: white;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .roleta-wrapper {
+            position: relative;
+            width: 400px;
+            height: 400px;
+            margin: 0 auto 30px;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            margin-top: 16px;
+        }
+
+        .pointer {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-top: 20px solid #FFD700;
+            z-index: 10;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+        }
+
+        button {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2em;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            font-weight: bold;
+        }
+
+        button:hover:not(:disabled) {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 10% auto;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            text-align: center;
+            animation: slideIn 0.3s ease;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-content h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 2em;
+        }
+
+        .modal-content p {
+            color: #333;
+            font-size: 1.5em;
+            margin-bottom: 25px;
+            font-weight: bold;
+        }
+
+        .modal-content img {
+            width: 100%;
+            max-width: 300px;
+            height: auto;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .close-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 10px 30px;
+            margin-top: 20px;
+        }
+
+        .close-button:hover {
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎡 Roleta do PIX 💰</h1>
+        <h3>Teste sua sorte!</h3>
+        
+        <div class="roleta-wrapper">
+            <div class="pointer"></div>
+            <canvas id="roletaCanvas" width="400" height="400"></canvas>
+        </div>
+
+        <button id="girarBtn" onclick="girarRoleta()">Girar Roleta</button>
+    </div>
+
+    <!-- Modal -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <h2>🎉 PARABÉNS SASSÁ! 🎉</h2>
+            <p id="premiacao"></p>
+            <img id="modalImage" src="" alt="Celebração">
+            <button class="close-button" onclick="fecharModal()">Fechar</button>
+        </div>
+    </div>
+
+    <script>
+        // Configuração da roleta
+        const segmentos = [
+            { valor: 300, cor: '#FF6B6B' },
+            { valor: 100, cor: '#4ECDC4' },
+            { valor: 200, cor: '#45B7D1' },
+            { valor: 100, cor: '#FFA07A' },
+            { valor: 100, cor: '#98D8C8' },
+            { valor: 200, cor: '#F7DC6F' },
+            { valor: 100, cor: '#BB8FCE' },
+            { valor: 200, cor: '#85C1E2' }
+        ];
+
+        let podeGirar = true;
+        let estaGirando = false;
+        let rotacaoAtual = 0;
+
+        function desenharRoleta() {
+            const canvas = document.getElementById('roletaCanvas');
+            const ctx = canvas.getContext('2d');
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = canvas.width / 2 - 10;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Aplicar rotação
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            ctx.rotate(rotacaoAtual);
+            ctx.translate(-centerX, -centerY);
+
+            const anguloSegmento = (Math.PI * 2) / segmentos.length;
+
+            segmentos.forEach((segmento, index) => {
+                const anguloInicio = index * anguloSegmento;
+                const anguloFim = (index + 1) * anguloSegmento;
+
+                // Desenhar segmento
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius, anguloInicio, anguloFim);
+                ctx.lineTo(centerX, centerY);
+                ctx.fillStyle = segmento.cor;
+                ctx.fill();
+
+                // Borda
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+
+                // Texto
+                ctx.save();
+                ctx.translate(centerX, centerY);
+                ctx.rotate(anguloInicio + anguloSegmento / 2);
+                ctx.textAlign = 'right';
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 18px Arial';
+                ctx.fillText('R$ ' + segmento.valor, radius - 30, 10);
+                ctx.restore();
+            });
+
+            ctx.restore();
+
+            // Círculo central
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 30, 0, Math.PI * 2);
+            ctx.fillStyle = '#FFD700';
+            ctx.fill();
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            ctx.fillStyle = '#333';
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('GIRE', centerX, centerY);
+        }
+
+        function girarRoleta() {
+            if (!podeGirar || estaGirando) return;
+
+            estaGirando = true;
+            document.getElementById('girarBtn').disabled = true;
+
+            // Número de rotações + ângulo aleatório
+            const rotacoesCont = 5;
+            const anguloExtra = Math.random() * (Math.PI * 2);
+            const anguloTotal = (Math.PI * 2) * rotacoesCont + anguloExtra;
+
+            const duracao = 5000; // 5 segundos
+            const inicio = Date.now();
+
+            function animar() {
+                const tempo = Date.now() - inicio;
+                const progresso = tempo / duracao;
+
+                if (progresso < 1) {
+                    // Easing function (ease-out)
+                    const easing = 1 - Math.pow(1 - progresso, 3);
+                    rotacaoAtual = anguloTotal * easing;
+                    desenharRoleta();
+                    requestAnimationFrame(animar);
+                } else {
+                    rotacaoAtual = anguloTotal;
+                    desenharRoleta();
+                    estaGirando = false;
+                    podeGirar = false;
+
+                    // Determinar qual segmento foi sorteado
+                    const anguloSegmento = (Math.PI * 2) / segmentos.length;
+                    const anguloNormalizado = anguloTotal % (Math.PI * 2);
+                    let indiceSegmento = Math.floor(anguloNormalizado / anguloSegmento);
+                    indiceSegmento = (segmentos.length - indiceSegmento) % segmentos.length;
+                    const segmentoGanho = segmentos[indiceSegmento];
+
+                    // Aguardar 1 segundo antes de abrir modal
+                    setTimeout(() => {
+                        mostrarModal(segmentoGanho.valor);
+                    }, 1000);
+                }
+            }
+
+            requestAnimationFrame(animar);
+        }
+
+        function mostrarModal(valor) {
+            document.getElementById('premiacao').textContent = `Você ganhou R$ ${valor}!`;
+            
+            // Aqui você pode definir qual imagem usar
+            // Mude a URL para a imagem que deseja
+            const imgUrl = './public/gifanimado.gif';
+            document.getElementById('modalImage').src = imgUrl;
+            
+            document.getElementById('modal').style.display = 'block';
+
+            // Enviar resultado por email
+            enviarResultadoPorEmail(valor);
+        }
+
+        function enviarResultadoPorEmail(valor) {
+            fetch('http://localhost:3000/enviar-resultado', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    valor: valor,
+                    timestamp: new Date().toISOString()
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Resposta do servidor:', data);
+                if (data.success) {
+                    console.log('Email enviado com sucesso!');
+                }
+            })
+            .catch(error => {
+                console.error('Erro ao enviar email:', error);
+            });
+        }
+
+        function fecharModal() {
+            document.getElementById('modal').style.display = 'none';
+        }
+
+        // Fechar modal ao clicar fora dele
+        window.onclick = function(event) {
+            const modal = document.getElementById('modal');
+            if (event.target == modal) {
+                fecharModal();
+            }
+        }
+
+        // Desenhar roleta ao carregar
+        desenharRoleta();
+    </script>
+</body>
+</html>
