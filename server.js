@@ -1,13 +1,19 @@
 const express = require('express');
 const nodemailer = require('nodemailer');
 const cors = require('cors');
+const path = require('path');
 require('dotenv').config();
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static('./'));
+app.use(express.static(path.join(__dirname, './')));
+
+// Rota para servir o index.html
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
 
 // Configure seus dados de email aqui
 // Para Gmail, gere uma senha de app em: https://myaccount.google.com/apppasswords
