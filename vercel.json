@@ -1,4 +1,19 @@
 {
   "version": 2,
-  "buildCommand": "npm install"
+  "builds": [
+    {
+      "src": "app.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/enviar-resultado",
+      "dest": "/api/enviar-resultado.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "app.js"
+    }
+  ]
 }
