@@ -1,7 +1,6 @@
 {
   "version": 2,
   "buildCommand": "echo 'Build skipped'",
-  "public": ".",
   "routes": [
     {
       "src": "/api/enviar-resultado",
