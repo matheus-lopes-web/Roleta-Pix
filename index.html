@@ -324,7 +324,11 @@
         }
 
         function enviarResultadoPorEmail(valor) {
-            fetch('/api/enviar-resultado', {
+            // Detectar a URL base (local ou Vercel)
+            const baseUrl = window.location.origin;
+            const endpoint = `${baseUrl}/api/enviar-resultado`;
+            
+            fetch(endpoint, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -339,6 +343,8 @@
                 console.log('Resposta do servidor:', data);
                 if (data.success) {
                     console.log('Email enviado com sucesso!');
+                } else {
+                    console.error('Falha ao enviar email:', data.message);
                 }
             })
             .catch(error => {
