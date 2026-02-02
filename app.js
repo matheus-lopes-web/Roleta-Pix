@@ -1,18 +1,11 @@
 const express = require('express');
 const path = require('path');
+const enviarResultado = require('./api/enviar-resultado');
 
 const app = express();
 
-// Servir arquivos estáticos
-app.use(express.static(path.join(__dirname, '.')));
+// Middleware
 app.use(express.json());
-
-// Rota para servir o index.html
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
-});
-
-// CORS para API
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -22,6 +15,17 @@ app.use((req, res, next) => {
   } else {
     next();
   }
+});
+
+// Servir arquivos estáticos
+app.use(express.static(path.join(__dirname, '.')));
+
+// API Routes
+app.post('/api/enviar-resultado', enviarResultado);
+
+// Rota para servir o index.html
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // Fallback para SPA
